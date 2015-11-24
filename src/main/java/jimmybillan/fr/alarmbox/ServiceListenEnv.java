@@ -9,42 +9,26 @@ import android.media.MediaRecorder;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
 
-/**
- * Created by user on 23/11/15.
- */
 public class ServiceListenEnv extends Service implements SensorEventListener {
 
-    MediaRecorder recorder;
+    private MediaRecorder recorder;
     private boolean isRecording = false;
+    private PowerManager powerManager;
+    private PowerManager.WakeLock wakeLock;
 
-    /* Afficher niveau de son
-    private ServiceCallbacks serviceCallbacks;
+    private int[] oneSecondRecord;
 
-    public interface ServiceCallbacks {
-        void updatSoundLevel(Integer lvl);
-        Handler getHandler();
-    }
-
-
-    public void setCallbacks(ServiceCallbacks callbacks) {
-        serviceCallbacks = callbacks;
-    }*/
-
-    public class LocalBinder extends Binder {
-        ServiceListenEnv getService(){
-            return ServiceListenEnv.this;
-        }
-    }
+    public static boolean isServiceRunning = false;
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-
     }
 
     @Override
@@ -52,16 +36,17 @@ public class ServiceListenEnv extends Service implements SensorEventListener {
 
     }
 
-    private final IBinder mBinder = new LocalBinder();
 
     @Override
     public IBinder onBind(Intent intent) {
-        return mBinder;
+        return null;
     }
     public void onCreate(){
-        Log.i("service", "onCreate");
+
         if (!isRecording) {
             recorder = new MediaRecorder();
+            powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"serviceListenEnv");
 
             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
             recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
@@ -73,7 +58,6 @@ public class ServiceListenEnv extends Service implements SensorEventListener {
                 recorder.prepare();
                 recorder.start();
                 isRecording = true;
-                Log.i("service", isRecording+"");// we are currently recording
                 getDB();
 
             } catch (IllegalStateException e) {
@@ -91,8 +75,12 @@ public class ServiceListenEnv extends Service implements SensorEventListener {
     }
 
     private void releaseRecorder() {
-        Log.i("service", "releaseRecorder");
         if (recorder != null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             isRecording = false; // stop recording
             recorder.stop();
             recorder.reset();
@@ -110,28 +98,35 @@ public class ServiceListenEnv extends Service implements SensorEventListener {
 
     public void getDB(){
 
+        isServiceRunning = true;
+
         Runnable runnable = new Runnable() {
             public void run() {
+
+                wakeLock.acquire();
+                oneSecondRecord = new int[10];
+                int i = 0;
                     while(isRecording) {
+                        if(i == oneSecondRecord.length){
+                            i = 0;
+                            int average = 0;
+                            for(int y = 0; y < oneSecondRecord.length - 1; y++){
+                                average = average+ oneSecondRecord[y];
+                            }
+                            Config.initDataStorage(getApplicationContext(),Math.round(average/10));
+                        }
+
                         try {
                             Thread.sleep(100);
-                            int x = recorder.getMaxAmplitude();
-
+                            if(recorder != null){
+                                int x = recorder.getMaxAmplitude();
+                                Log.i("lvl : ", x+"");
+                                oneSecondRecord[i]= x;
+                                i++;
+                            }
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                       /*
-                       Afficher niveau de son
-                       if (serviceCallbacks != null) {
-                            serviceCallbacks.getHandler().post(new Runnable() {
-                            public void run() {
-                                int x = recorder.getMaxAmplitude();
-
-                                    serviceCallbacks.updatSoundLevel(x);
-
-
-                            }});
-                        }*/
                     }
 
             }
@@ -149,8 +144,9 @@ public class ServiceListenEnv extends Service implements SensorEventListener {
     public void onDestroy() {
         Log.i("onDestroy", "override onDestroy");
         releaseRecorder();
-        //mySensorManager.unregisterListener(this);
         super.onDestroy();
+        wakeLock.release();
+        isServiceRunning = false;
     }
 
 
