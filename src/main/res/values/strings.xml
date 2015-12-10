@@ -3,4 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="planeInactive">Le mode avion est désactivé</string>
+    <string name="planeActive">Le mode avion est activé</string>
+
 </resources>
