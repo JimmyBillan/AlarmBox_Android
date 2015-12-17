@@ -36,7 +36,8 @@ import java.util.Date;
 
 public class MainActivity extends AppCompatActivity/* implements ServiceListenEnv.ServiceCallbacks*/ {
 
-    public String domain = "172.20.4.98";
+  public String domain = "172.20.5.251";
+  //  public String domain = "127.0.0.1";
 
     ServiceListenEnv mService;
     TextView level_soundTV;
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity/* implements ServiceListenEn
     public static final int INPUT_FILE_REQUEST_CODE = 1;
     public static final String EXTRA_FROM_NOTIFICATION = "EXTRA_FROM_NOTIFICATION";
 
-    private WebView mWebView;
+    private WebView myWebView;
     private ValueCallback<Uri[]> mFilePathCallback;
     private String mCameraPhotoPath;
 
@@ -123,7 +124,7 @@ public class MainActivity extends AppCompatActivity/* implements ServiceListenEn
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        WebView myWebView = (WebView) findViewById(R.id.webview);
+        myWebView = (WebView) findViewById(R.id.webview);
         myWebView.setWebChromeClient(new mWebChromeClient());
         myWebView.setWebViewClient(new WebViewClient() {
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -137,6 +138,7 @@ public class MainActivity extends AppCompatActivity/* implements ServiceListenEn
                 startActivity(intent);
                 return true;
             }
+
             public void onPageFinished(WebView view, String url) {
                 CookieSyncManager.getInstance().sync();
             }
@@ -144,7 +146,7 @@ public class MainActivity extends AppCompatActivity/* implements ServiceListenEn
         WebSettings webSettings = myWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         CookieManager.getInstance().setAcceptCookie(true);
-        myWebView.loadUrl("http://"+domain+":3000");
+        myWebView.loadUrl("http://" + domain + ":3000");
 
 
 
@@ -205,20 +207,26 @@ public class MainActivity extends AppCompatActivity/* implements ServiceListenEn
         findViewById(R.id.btn_start_plane_mode).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (android.os.Build.VERSION.SDK_INT < 17){
-                    try{
+                if (android.os.Build.VERSION.SDK_INT < 17) {
+                    try {
                         Intent intentAirplaneMode = new Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS);
                         intentAirplaneMode.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(intentAirplaneMode);
-                    }
-                    catch (ActivityNotFoundException e){
+                    } catch (ActivityNotFoundException e) {
                         Log.e("exception", e + "");
                     }
-                }
-                else{
+                } else {
                     Intent intent1 = new Intent("android.settings.WIRELESS_SETTINGS");
-                    intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(intent1);
+                    intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent1);
                 }
+            }
+        });
+
+        findViewById(R.id.imageButtonRefresh).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               myWebView.reload();
             }
         });
 
@@ -288,7 +296,7 @@ public class MainActivity extends AppCompatActivity/* implements ServiceListenEn
 
         // We set the WebViewClient to ensure links are consumed by the WebView rather
         // than passed to a browser if it can
-        mWebView.setWebViewClient(new WebViewClient());
+        myWebView.setWebViewClient(new WebViewClient());
     }
 
     public void onActivityResult (int requestCode, int resultCode, Intent data) {

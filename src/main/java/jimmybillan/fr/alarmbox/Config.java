@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.Settings;
 import android.util.Log;
 
 import java.io.BufferedWriter;
@@ -27,7 +28,7 @@ abstract class Config {
 
     public static void initDataStorage(Context context, int x){
 
-        String s = x+"/";
+        String s = x+":"+(System.currentTimeMillis())+"/";
         try
         {
             File traceFile = new File(context.getExternalFilesDir(null), "TraceFile.txt");
@@ -42,6 +43,13 @@ abstract class Config {
         {
             Log.i("d", "Unable to write to the TraceFile.txt file.");
         }
+
+    }
+
+    public static boolean isAirplaneModeOn(Context context) {
+
+        return Settings.Global.getInt(context.getContentResolver(),
+                Settings.Global.AIRPLANE_MODE_ON, 0) != 0;
 
     }
 

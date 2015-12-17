@@ -78,14 +78,15 @@ public class ServiceListenEnv extends Service implements SensorEventListener {
         if (recorder != null) {
             try {
                 Thread.sleep(100);
+                isRecording = false; // stop recording
+                recorder.stop();
+                recorder.reset();
+                recorder.release();
+                recorder = null;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            isRecording = false; // stop recording
-            recorder.stop();
-            recorder.reset();
-            recorder.release();
-            recorder = null;
+
         }
     }
 
@@ -119,10 +120,15 @@ public class ServiceListenEnv extends Service implements SensorEventListener {
                         try {
                             Thread.sleep(100);
                             if(recorder != null){
-                                int x = recorder.getMaxAmplitude();
-                                Log.i("lvl : ", x+"");
-                                oneSecondRecord[i]= x;
-                                i++;
+                                try {
+                                    int x = recorder.getMaxAmplitude();
+                                    Log.i("lvl : ", x+"");
+                                    oneSecondRecord[i]= x;
+                                    i++;
+                                }finally {
+
+                                }
+
                             }
                         } catch (InterruptedException e) {
                             e.printStackTrace();
